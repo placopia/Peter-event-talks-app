@@ -52,6 +52,14 @@ if (charProgress) {
 
 // Initial initialization
 document.addEventListener('DOMContentLoaded', () => {
+    // Check local storage for theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        const themeToggleIcon = document.getElementById('theme-toggle-icon');
+        if (themeToggleIcon) themeToggleIcon.className = 'fa-solid fa-sun';
+    }
+    
     fetchReleases();
     setupEventListeners();
 });
@@ -106,6 +114,30 @@ function setupEventListeners() {
         const twitterIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
         window.open(twitterIntentUrl, '_blank', 'noopener,noreferrer,width=550,height=420');
     });
+
+    // Theme toggle button click
+    const btnThemeToggle = document.getElementById('btn-theme-toggle');
+    const themeToggleIcon = document.getElementById('theme-toggle-icon');
+    if (btnThemeToggle) {
+        btnThemeToggle.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-mode');
+            if (isLight) {
+                if (themeToggleIcon) themeToggleIcon.className = 'fa-solid fa-sun';
+                localStorage.setItem('theme', 'light');
+            } else {
+                if (themeToggleIcon) themeToggleIcon.className = 'fa-solid fa-moon';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    }
+
+    // Export CSV button click
+    const btnExportCSV = document.getElementById('btn-export-csv');
+    if (btnExportCSV) {
+        btnExportCSV.addEventListener('click', () => {
+            exportToCSV();
+        });
+    }
 }
 
 // Fetch releases from Flask API
@@ -208,13 +240,9 @@ function renderSkeletons() {
     }
 }
 
-// Filter and Render Feed Cards
-function renderFeed() {
-    if (state.isLoading) return;
-    
-    feedContainer.innerHTML = '';
-    
-    const filtered = state.releases.filter(rel => {
+// Get currently filtered releases
+function getFilteredReleases() {
+    return state.releases.filter(rel => {
         // Category Filter
         const matchesCategory = state.selectedCategory === 'all' || rel.category === state.selectedCategory;
         
@@ -226,6 +254,15 @@ function renderFeed() {
                               
         return matchesCategory && matchesSearch;
     });
+}
+
+// Filter and Render Feed Cards
+function renderFeed() {
+    if (state.isLoading) return;
+    
+    feedContainer.innerHTML = '';
+    
+    const filtered = getFilteredReleases();
     
     if (filtered.length === 0) {
         feedContainer.innerHTML = `
@@ -261,14 +298,24 @@ function renderFeed() {
                 ${rel.content_html}
             </div>
             <div class="card-footer">
-                <span class="tweet-action-link">
+                <button class="card-action-btn btn-copy-clip" data-id="${rel.id}" title="Copy Update Text to Clipboard">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy Text</span>
+                </button>
+                <button class="card-action-btn btn-draft-tweet" data-id="${rel.id}" title="Draft Tweet for this Update">
                     <i class="fa-solid fa-pen-nib"></i>
                     <span>Draft Tweet</span>
-                </span>
+                </button>
             </div>
         `;
         
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+            const copyBtn = e.target.closest('.btn-copy-clip');
+            if (copyBtn) {
+                e.stopPropagation();
+                copyToClipboard(rel.content_text, copyBtn);
+                return;
+            }
             selectRelease(rel.id);
         });
         
@@ -352,4 +399,80 @@ function updateCharCounter() {
             charProgress.style.stroke = 'var(--color-primary)';
         }
     }
+}
+
+// Copy release note content to clipboard
+function copyToClipboard(text, button) {
+    if (!navigator.clipboard) {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showCopySuccess(button);
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+        }
+        document.body.removeChild(textarea);
+        return;
+    }
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showCopySuccess(button);
+    }, (err) => {
+        console.error('Async: Could not copy text: ', err);
+    });
+}
+
+// Show copy feedback visually
+function showCopySuccess(button) {
+    button.classList.add('copied');
+    const originalHTML = button.innerHTML;
+    button.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Copied!</span>`;
+    
+    setTimeout(() => {
+        button.classList.remove('copied');
+        button.innerHTML = originalHTML;
+    }, 2000);
+}
+
+// Export currently filtered list to CSV
+function exportToCSV() {
+    const filtered = getFilteredReleases();
+    if (filtered.length === 0) {
+        showError("No data available to export.");
+        return;
+    }
+    
+    // Construct CSV content
+    // Start with headers
+    let csvRows = ["Date,Category,Update Content,GCP Reference Link"];
+    
+    filtered.forEach(rel => {
+        // Double quotes inside fields must be escaped as two double quotes
+        const cleanDate = rel.date.replace(/"/g, '""');
+        const cleanCat = rel.category.replace(/"/g, '""');
+        const cleanContent = rel.content_text.replace(/"/g, '""');
+        const cleanLink = rel.link.replace(/"/g, '""');
+        
+        csvRows.push(`"${cleanDate}","${cleanCat}","${cleanContent}","${cleanLink}"`);
+    });
+    
+    const csvContent = csvRows.join("\n");
+    
+    // Create blob and trigger browser download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const categoryName = state.selectedCategory.toLowerCase();
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `bigquery_releases_${categoryName}_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }

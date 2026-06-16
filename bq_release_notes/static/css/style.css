@@ -526,24 +526,44 @@ body {
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    gap: 12px;
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.tweet-action-link {
+.card-action-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
+    gap: 6px;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-muted);
-    text-decoration: none;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
     transition: var(--transition-fast);
 }
 
-.update-card:hover .tweet-action-link {
+.card-action-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.card-action-btn.btn-draft-tweet:hover {
     color: var(--color-primary);
+    border-color: var(--color-primary);
+    background-color: rgba(99, 102, 241, 0.05);
+}
+
+.card-action-btn.btn-copy-clip.copied {
+    color: var(--color-feature);
+    border-color: var(--color-feature);
+    background-color: rgba(16, 185, 129, 0.05);
 }
 
 /* Empty State */
@@ -912,4 +932,104 @@ body {
     .close-drawer-btn {
         display: block;
     }
+}
+
+/* ==========================================================================
+   THEME TOGGLE BUTTON & EXPORT BUTTON & LIGHT MODE OVERRIDES
+   ========================================================================== */
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: 1.1rem;
+}
+
+.theme-toggle-btn:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow);
+    transform: scale(1.05);
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+/* Export CSV Button */
+.export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.export-btn:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+}
+
+.export-btn:active {
+    transform: translateY(0);
+}
+
+/* Light Mode Theme Overrides */
+body.light-mode {
+    --bg-app: #f8fafc;
+    --bg-sidebar: #ffffff;
+    --bg-card: #f1f5f9;
+    --bg-card-hover: #e2e8f0;
+    --bg-card-active: #e2e0ff;
+    
+    --border-color: #cbd5e1;
+    --border-hover: #94a3b8;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+}
+
+body.light-mode .main-header h1 {
+    background: linear-gradient(to right, #0f172a, #334155);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+body.light-mode .card-body a {
+    color: var(--color-primary);
+}
+
+body.light-mode .card-body a:hover {
+    color: #8b5cf6;
+}
+
+body.light-mode .sync-info {
+    border-top: 1px solid var(--border-color);
+}
+
+body.light-mode .export-btn:hover {
+    background-color: rgba(99, 102, 241, 0.05);
+}
+
+body.light-mode .card-action-btn:hover {
+    background-color: rgba(0, 0, 0, 0.02);
 }

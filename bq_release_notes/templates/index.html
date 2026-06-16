@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=meta-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Hub</title>
+    <meta name="description" content="Explore, filter, and share Google Cloud BigQuery release notes instantly on X/Twitter.">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation & Filters -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-database logo-icon"></i>
+                    <span>BQ Release Notes</span>
+                </div>
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text">Live Feed</span>
+                </div>
+            </div>
+
+            <!-- Search Panel -->
+            <div class="search-section">
+                <label for="search-input" class="section-label">Search Updates</label>
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Filter by keyword...">
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filter-section">
+                <span class="section-label">Categories</span>
+                <div class="category-filters" id="category-filters">
+                    <button class="filter-btn active" data-category="all" id="btn-filter-all">
+                        <span class="btn-text">All Categories</span>
+                        <span class="count" id="count-all">0</span>
+                    </button>
+                    <button class="filter-btn" data-category="Feature" id="btn-filter-feature">
+                        <span class="category-indicator feature-dot"></span>
+                        <span class="btn-text">Features</span>
+                        <span class="count" id="count-feature">0</span>
+                    </button>
+                    <button class="filter-btn" data-category="Change" id="btn-filter-change">
+                        <span class="category-indicator change-dot"></span>
+                        <span class="btn-text">Changes</span>
+                        <span class="count" id="count-change">0</span>
+                    </button>
+                    <button class="filter-btn" data-category="Issue" id="btn-filter-issue">
+                        <span class="category-indicator issue-dot"></span>
+                        <span class="btn-text">Issues / Fixes</span>
+                        <span class="count" id="count-issue">0</span>
+                    </button>
+                    <button class="filter-btn" data-category="Deprecation" id="btn-filter-deprecation">
+                        <span class="category-indicator deprecation-dot"></span>
+                        <span class="btn-text">Deprecations</span>
+                        <span class="count" id="count-deprecation">0</span>
+                    </button>
+                    <button class="filter-btn" data-category="General" id="btn-filter-general">
+                        <span class="category-indicator general-dot"></span>
+                        <span class="btn-text">General Info</span>
+                        <span class="count" id="count-general">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats & Sync Section -->
+            <div class="sync-info">
+                <div class="stat-row">
+                    <span class="stat-label">Total Logs:</span>
+                    <span class="stat-value" id="stat-total-count">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Cached Sync:</span>
+                    <span class="stat-value" id="stat-last-sync">N/A</span>
+                </div>
+                <button class="refresh-btn" id="btn-refresh" title="Force Refresh Release Notes">
+                    <i class="fa-solid fa-arrows-rotate refresh-icon" id="refresh-spinner"></i>
+                    <span>Sync Notes</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <header class="main-header">
+                <div class="header-left">
+                    <h1>BigQuery Updates Feed</h1>
+                    <p class="subtitle">Stay updated with official Google Cloud BigQuery modifications, enhancements, and API improvements.</p>
+                </div>
+            </header>
+
+            <!-- Error Banner -->
+            <div class="error-banner hidden" id="error-banner">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="error-message">Failed to load updates. Please try again.</span>
+                <button class="close-error-btn" id="btn-close-error"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Feed List Container -->
+            <div class="feed-container" id="feed-container">
+                <!-- Skeleton loader is generated via JavaScript during initial load -->
+            </div>
+        </main>
+
+        <!-- Tweet Composer Drawer -->
+        <aside class="composer-drawer" id="composer-drawer">
+            <div class="drawer-header">
+                <div class="drawer-title">
+                    <i class="fa-brands fa-x-twitter"></i>
+                    <span>Tweet Composer</span>
+                </div>
+                <button class="close-drawer-btn" id="btn-close-drawer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="drawer-empty-state" id="composer-empty-state">
+                <div class="empty-icon-container">
+                    <i class="fa-brands fa-x-twitter"></i>
+                </div>
+                <h3>Share an Update</h3>
+                <p>Select any release note card on the left to draft and customize a tweet sharing the update.</p>
+            </div>
+
+            <div class="drawer-content hidden" id="composer-content">
+                <div class="selected-note-preview">
+                    <span class="preview-badge" id="preview-badge">Feature</span>
+                    <span class="preview-date" id="preview-date">June 15, 2026</span>
+                    <div class="preview-text" id="preview-text">
+                        Loading selected note text...
+                    </div>
+                </div>
+
+                <div class="tweet-editor-container">
+                    <label for="tweet-textarea" class="section-label">Edit Tweet Text</label>
+                    <textarea id="tweet-textarea" spellcheck="true" placeholder="Compose your tweet..."></textarea>
+                    
+                    <div class="editor-footer">
+                        <div class="character-counter">
+                            <svg class="progress-ring" width="36" height="36">
+                                <circle class="progress-ring__circle-bg" stroke="#1d2a45" stroke-width="3" fill="transparent" r="14" cx="18" cy="18" />
+                                <circle class="progress-ring__circle" id="char-progress" stroke="#6366f1" stroke-width="3" fill="transparent" r="14" cx="18" cy="18" />
+                            </svg>
+                            <span class="char-count" id="char-count-text">280</span>
+                        </div>
+                        <button class="tweet-submit-btn" id="btn-send-tweet">
+                            <i class="fa-brands fa-x-twitter"></i>
+                            <span>Post Tweet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="share-tips">
+                    <span class="tips-title"><i class="fa-solid fa-lightbulb"></i> Pro Tips:</span>
+                    <ul>
+                        <li>Keep the text concise for higher engagement.</li>
+                        <li>The official release link is automatically attached to direct readers back to documentation.</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
